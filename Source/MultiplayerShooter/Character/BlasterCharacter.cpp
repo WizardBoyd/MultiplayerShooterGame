@@ -4,9 +4,9 @@
 #include "BlasterCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "InputMappingContext.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInput/Public/EnhancedInputComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "MultiplayerShooter/Input/InputConfigData.h"
 
 
@@ -22,6 +22,9 @@ ABlasterCharacter::ABlasterCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+
+	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 }
 
 
@@ -91,5 +94,6 @@ void ABlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	//bind actions
 	PEI->BindAction(InputActions->InputMove, ETriggerEvent::Triggered, this, &ThisClass::Move);
 	PEI->BindAction(InputActions->InputLook, ETriggerEvent::Triggered, this, &ThisClass::Look);
+	PEI->BindAction(InputActions->InputJump, ETriggerEvent::Triggered, this, &ThisClass::Jump);
 }
 
