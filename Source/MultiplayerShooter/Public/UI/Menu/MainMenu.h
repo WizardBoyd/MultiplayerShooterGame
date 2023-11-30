@@ -7,6 +7,7 @@
 #include "Containers/Deque.h"
 #include "MainMenu.generated.h"
 
+
 class UWidgetSwitcher;
 /**
  * 
@@ -17,14 +18,4 @@ class MULTIPLAYERSHOOTER_API UMainMenu : public UUserWidget
 	GENERATED_BODY()
 
 protected:
-
-	UPROPERTY(VisibleAnywhere, meta = (BindWidget))
-	TObjectPtr<UWidgetSwitcher> WidgetSwitcher;
-
-private:
-
-	TDeque<UUserWidget>* MenuStack;
-
-	void PutMenuOnStack(const UUserWidget& MenuToStack);
-	void GoBack();
 };
