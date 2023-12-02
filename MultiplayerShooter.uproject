@@ -15,13 +15,6 @@
 	],
 	"Plugins": [
 		{
-			"Name": "ModelingToolsEditorMode",
-			"Enabled": true,
-			"TargetAllowList": [
-				"Editor"
-			]
-		},
-		{
 			"Name": "OnlineSubsystemSteam",
 			"Enabled": true
 		},
@@ -30,7 +23,7 @@
 			"Enabled": true
 		},
 		{
-			"Name": "HoudiniEngine",
+			"Name": "CommonUI",
 			"Enabled": true
 		}
 	]
