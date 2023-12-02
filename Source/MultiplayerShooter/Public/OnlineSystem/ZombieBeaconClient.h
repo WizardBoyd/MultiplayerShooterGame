@@ -44,6 +44,9 @@ public:
 
 	virtual void Client_OnLobbyUpdated_Implementation(FZombieLobbyInfo LobbyInfo);
 
+	void SetPlayerIndex(uint8 Index);
+	uint8 GetPlayerIndex();
+
 protected:
 	UPROPERTY(BlueprintAssignable)
 	FConnectSuccessful OnClientConnected;
@@ -53,4 +56,6 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FLobbyUpdated OnLobbyUpdated;
+
+	uint8 PlayerIndex;
 };

@@ -16,6 +16,7 @@ void AZombieBeaconHostObject::UpdateLobbyInfo(FZombieLobbyInfo NewLobbyInfo)
 {
 	LobbyInfo.MapImage = NewLobbyInfo.MapImage;
 	UpdateClientLobbyInfo();
+	OnLobbyUpdated.Broadcast(LobbyInfo);
 }
 
 void AZombieBeaconHostObject::UpdateClientLobbyInfo()
@@ -29,17 +30,31 @@ void AZombieBeaconHostObject::UpdateClientLobbyInfo()
 	}
 }
 
+void AZombieBeaconHostObject::BeginPlay()
+{
+	UE_LOG(LogTemp, Warning, TEXT("BEACON BEGIN PLAY"))
+	LobbyInfo.PlayerList.Add(FString("Host"));
+}
+
 void AZombieBeaconHostObject::OnClientConnected(AOnlineBeaconClient* NewClientActor, UNetConnection* ClientConnection)
 {
 	Super::OnClientConnected(NewClientActor, ClientConnection);
 
 	if(NewClientActor)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Connected Client Valid"))
+		FString PlayerName = FString("Player ");
+		const uint8 Index = LobbyInfo.PlayerList.Num();
+		PlayerName.Append(FString::FromInt(Index));
+		LobbyInfo.PlayerList.Add(PlayerName);
+
 		if(AZombieBeaconClient* Client = Cast<AZombieBeaconClient>(NewClientActor))
 		{
-			Client->Client_OnLobbyUpdated(LobbyInfo);
+			Client->SetPlayerIndex(Index);
 		}
+		
+		UE_LOG(LogTemp, Warning, TEXT("Connected Client Valid"))
+		OnLobbyUpdated.Broadcast(LobbyInfo);
+		UpdateClientLobbyInfo();
 	}
 	else
 	{
@@ -51,6 +66,14 @@ void AZombieBeaconHostObject::NotifyClientDisconnected(AOnlineBeaconClient* Leav
 {
 	Super::NotifyClientDisconnected(LeavingClientActor);
 	UE_LOG(LogTemp, Warning, TEXT("Client Has Disconnected"))
+
+	if(AZombieBeaconClient* Client = Cast<AZombieBeaconClient>(LeavingClientActor))
+	{
+		uint8 Index = Client->GetPlayerIndex();
+		LobbyInfo.PlayerList.RemoveAt(Index);
+	}
+	OnLobbyUpdated.Broadcast(LobbyInfo);
+	UpdateClientLobbyInfo();
 }
 
 void AZombieBeaconHostObject::ShutdownServer()
