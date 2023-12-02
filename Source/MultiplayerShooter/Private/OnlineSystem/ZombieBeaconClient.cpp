@@ -39,5 +39,10 @@ void AZombieBeaconClient::Client_OnDisconnected_Implementation()
 	OnClientDisconnected.Broadcast();
 }
 
+void AZombieBeaconClient::Client_OnLobbyUpdated_Implementation(FZombieLobbyInfo LobbyInfo)
+{
+	OnLobbyUpdated.Broadcast(LobbyInfo);
+}
+
 
 

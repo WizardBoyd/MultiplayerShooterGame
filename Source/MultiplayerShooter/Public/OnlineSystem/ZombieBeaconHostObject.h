@@ -6,6 +6,18 @@
 #include "OnlineBeaconHostObject.h"
 #include "ZombieBeaconHostObject.generated.h"
 
+USTRUCT(BlueprintType)
+struct FZombieLobbyInfo
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(BlueprintReadWrite)
+	TObjectPtr<class UTexture2D> MapImage;
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FString> PlayerList;
+};
+
 /**
  * 
  */
@@ -17,6 +29,15 @@ class MULTIPLAYERSHOOTER_API AZombieBeaconHostObject : public AOnlineBeaconHostO
 public:
 	AZombieBeaconHostObject();
 
+protected:
+
+	FZombieLobbyInfo LobbyInfo;
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateLobbyInfo(FZombieLobbyInfo NewLobbyInfo);
+
+	void UpdateClientLobbyInfo();
+	
 protected:
 	
 	virtual void OnClientConnected(AOnlineBeaconClient* NewClientActor, UNetConnection* ClientConnection) override;
