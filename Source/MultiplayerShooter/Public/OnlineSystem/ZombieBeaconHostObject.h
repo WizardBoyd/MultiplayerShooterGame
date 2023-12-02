@@ -16,5 +16,17 @@ class MULTIPLAYERSHOOTER_API AZombieBeaconHostObject : public AOnlineBeaconHostO
 
 public:
 	AZombieBeaconHostObject();
+
+protected:
 	
+	virtual void OnClientConnected(AOnlineBeaconClient* NewClientActor, UNetConnection* ClientConnection) override;
+	virtual void NotifyClientDisconnected(AOnlineBeaconClient* LeavingClientActor) override;
+
+	UFUNCTION(BlueprintCallable)
+	void ShutdownServer();
+	
+	void DisconnectAllClients();
+
+	virtual void DisconnectClient(AOnlineBeaconClient* ClientActor) override;
+
 };

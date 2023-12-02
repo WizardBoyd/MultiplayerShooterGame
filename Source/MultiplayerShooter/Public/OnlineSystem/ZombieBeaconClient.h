@@ -6,6 +6,9 @@
 #include "OnlineBeaconClient.h"
 #include "ZombieBeaconClient.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FConnectSuccessful, bool, bConnected);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDisconnected);
+
 /**
  * 
  */
@@ -16,5 +19,27 @@ class MULTIPLAYERSHOOTER_API AZombieBeaconClient : public AOnlineBeaconClient
 
 public:
 	AZombieBeaconClient();
+
+protected:
+	UFUNCTION(BlueprintCallable)
+	bool ConnectToServer(const FString& Address);
+
+	UFUNCTION(BlueprintCallable)
+	void LeaveLobby();
 	
+	virtual void OnFailure() override;
+	virtual void OnConnected() override;
+
+public:
+	UFUNCTION(Client, Reliable)
+	void Client_OnDisconnected();
+
+	virtual void Client_OnDisconnected_Implementation();
+
+protected:
+	UPROPERTY(BlueprintAssignable)
+	FConnectSuccessful OnClientConnected;
+
+	UPROPERTY(BlueprintAssignable)
+	FDisconnected OnClientDisconnected;
 };
