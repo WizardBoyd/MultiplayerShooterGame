@@ -67,17 +67,19 @@ void AZombieBeaconHostObject::NotifyClientDisconnected(AOnlineBeaconClient* Leav
 	Super::NotifyClientDisconnected(LeavingClientActor);
 	UE_LOG(LogTemp, Warning, TEXT("Client Has Disconnected"))
 
-	if(AZombieBeaconClient* Client = Cast<AZombieBeaconClient>(LeavingClientActor))
-	{
-		uint8 Index = Client->GetPlayerIndex();
-		LobbyInfo.PlayerList.RemoveAt(Index);
-	}
+	// if(AZombieBeaconClient* Client = Cast<AZombieBeaconClient>(LeavingClientActor))
+	// {
+	// 	uint8 Index = Client->GetPlayerIndex();
+	// 	LobbyInfo.PlayerList.RemoveAt(Index);
+	// }
+	ReAssignPlayerIDs();
 	OnLobbyUpdated.Broadcast(LobbyInfo);
 	UpdateClientLobbyInfo();
 }
 
 void AZombieBeaconHostObject::ShutdownServer()
 {
+	UE_LOG(LogTemp, Warning, TEXT("ATTEMPTING SHUT DOWN SERVER"))
 	//Unregister Server from database via web api
 	DisconnectAllClients();
 	if(AOnlineBeaconHost* Host = Cast<AOnlineBeaconHost>(GetOwner()))
@@ -86,6 +88,7 @@ void AZombieBeaconHostObject::ShutdownServer()
 		Host->UnregisterHost(BeaconTypeName);
 		Host->DestroyBeacon();
 	}
+	UE_LOG(LogTemp, Warning, TEXT("SERVER SHUT DOWN"))
 }
 
 void AZombieBeaconHostObject::DisconnectAllClients()
@@ -109,5 +112,22 @@ void AZombieBeaconHostObject::DisconnectClient(AOnlineBeaconClient* ClientActor)
 			Client->Client_OnDisconnected();
 		}
 		BeaconHost->DisconnectClient(ClientActor);
+	}
+}
+
+void AZombieBeaconHostObject::ReAssignPlayerIDs()
+{
+	LobbyInfo.PlayerList.Empty();
+	LobbyInfo.PlayerList.Add(FString("Host"));
+	for(AOnlineBeaconClient* ClientBeacon: ClientActors)
+	{
+		if(AZombieBeaconClient* Client = Cast<AZombieBeaconClient>(ClientBeacon))
+		{
+			FString PlayerName = FString("Player ");
+			const uint8 Index = LobbyInfo.PlayerList.Num();
+			PlayerName.Append(FString::FromInt(Index));
+			LobbyInfo.PlayerList.Add(PlayerName);
+			Client->SetPlayerIndex(Index);
+		}
 	}
 }

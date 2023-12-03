@@ -34,6 +34,24 @@ void AZombieBeaconClient::OnConnected()
 	OnClientConnected.Broadcast(true);
 }
 
+void AZombieBeaconClient::SendChatMessage(FText ChatMessage)
+{
+	FString Message = ChatMessage.ToString();
+	UE_LOG(LogTemp, Warning, TEXT("Chat: %s"), *Message);
+	Server_SendChatMessage(ChatMessage);
+}
+
+void AZombieBeaconClient::Server_SendChatMessage_Implementation(const FText& ChatMessage)
+{
+	FString Message = ChatMessage.ToString();
+	UE_LOG(LogTemp, Warning, TEXT("Chat: %s"), *Message);
+}
+
+bool AZombieBeaconClient::Server_SendChatMessage_Validate(const FText& ChatMessage)
+{
+	return true;
+}
+
 void AZombieBeaconClient::Client_OnDisconnected_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("DISCONNECTED"))

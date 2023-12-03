@@ -56,4 +56,7 @@ protected:
 
 	virtual void DisconnectClient(AOnlineBeaconClient* ClientActor) override;
 
+private:
+
+	void ReAssignPlayerIDs();
 };

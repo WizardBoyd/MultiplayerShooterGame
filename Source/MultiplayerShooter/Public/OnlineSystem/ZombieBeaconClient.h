@@ -33,6 +33,18 @@ protected:
 	virtual void OnFailure() override;
 	virtual void OnConnected() override;
 
+protected:
+	/*
+	 *	Chat related Features
+	 */
+	UFUNCTION(BlueprintCallable)
+	void SendChatMessage(FText ChatMessage);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+		void Server_SendChatMessage(const FText& ChatMessage);
+	void Server_SendChatMessage_Implementation(const FText& ChatMessage);
+	bool Server_SendChatMessage_Validate(const FText& ChatMessage);
+
 public:
 	UFUNCTION(Client, Reliable)
 	void Client_OnDisconnected();
