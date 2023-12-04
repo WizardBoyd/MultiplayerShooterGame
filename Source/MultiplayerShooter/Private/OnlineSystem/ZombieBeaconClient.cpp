@@ -36,15 +36,17 @@ void AZombieBeaconClient::OnConnected()
 
 void AZombieBeaconClient::SendChatMessage(FText ChatMessage)
 {
-	FString Message = ChatMessage.ToString();
-	UE_LOG(LogTemp, Warning, TEXT("Chat: %s"), *Message);
 	Server_SendChatMessage(ChatMessage);
 }
 
 void AZombieBeaconClient::Server_SendChatMessage_Implementation(const FText& ChatMessage)
 {
-	FString Message = ChatMessage.ToString();
+	FString Message = PlayerName + ": " + ChatMessage.ToString();
 	UE_LOG(LogTemp, Warning, TEXT("Chat: %s"), *Message);
+	if(AZombieBeaconHostObject* Host = Cast<AZombieBeaconHostObject>(BeaconOwner))
+	{
+		Host->SendChatToLobby(FText::FromString(Message));
+	}
 }
 
 bool AZombieBeaconClient::Server_SendChatMessage_Validate(const FText& ChatMessage)
@@ -56,6 +58,11 @@ void AZombieBeaconClient::Client_OnDisconnected_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("DISCONNECTED"))
 	OnClientDisconnected.Broadcast();
+}
+
+void AZombieBeaconClient::Client_OnChatMessageReceived_Implementation(const FText& ChatMessage)
+{
+	OnChatReceived.Broadcast(ChatMessage);
 }
 
 void AZombieBeaconClient::Client_OnLobbyUpdated_Implementation(FZombieLobbyInfo LobbyInfo)
@@ -71,6 +78,16 @@ void AZombieBeaconClient::SetPlayerIndex(uint8 Index)
 uint8 AZombieBeaconClient::GetPlayerIndex()
 {
 	return PlayerIndex;
+}
+
+void AZombieBeaconClient::SetPlayerName(const FString& NewPlayerName)
+{
+	PlayerName = NewPlayerName;
+}
+
+FString AZombieBeaconClient::GetPlayerName()
+{
+	return PlayerName;
 }
 
 

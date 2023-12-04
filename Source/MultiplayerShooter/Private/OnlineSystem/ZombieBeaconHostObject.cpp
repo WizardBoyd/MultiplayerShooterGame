@@ -5,6 +5,7 @@
 
 #include "OnlineBeaconHost.h"
 #include "OnlineSystem/ZombieBeaconClient.h"
+#include "TimerManager.h"
 
 AZombieBeaconHostObject::AZombieBeaconHostObject()
 {
@@ -30,10 +31,16 @@ void AZombieBeaconHostObject::UpdateClientLobbyInfo()
 	}
 }
 
+void AZombieBeaconHostObject::InitialLobbyHandling()
+{
+	UpdateLobbyInfo(LobbyInfo);
+}
+
 void AZombieBeaconHostObject::BeginPlay()
 {
 	UE_LOG(LogTemp, Warning, TEXT("BEACON BEGIN PLAY"))
 	LobbyInfo.PlayerList.Add(FString("Host"));
+	GetWorld()->GetTimerManager().SetTimer(TInitialLobbyHandle, this, &ThisClass::InitialLobbyHandling, 0.2f, false);
 }
 
 void AZombieBeaconHostObject::OnClientConnected(AOnlineBeaconClient* NewClientActor, UNetConnection* ClientConnection)
@@ -50,6 +57,7 @@ void AZombieBeaconHostObject::OnClientConnected(AOnlineBeaconClient* NewClientAc
 		if(AZombieBeaconClient* Client = Cast<AZombieBeaconClient>(NewClientActor))
 		{
 			Client->SetPlayerIndex(Index);
+			Client->SetPlayerName(PlayerName);
 		}
 		
 		UE_LOG(LogTemp, Warning, TEXT("Connected Client Valid"))
@@ -128,6 +136,19 @@ void AZombieBeaconHostObject::ReAssignPlayerIDs()
 			PlayerName.Append(FString::FromInt(Index));
 			LobbyInfo.PlayerList.Add(PlayerName);
 			Client->SetPlayerIndex(Index);
+		}
+	}
+}
+
+void AZombieBeaconHostObject::SendChatToLobby(const FText& ChatMessage)
+{
+	OnChatReceived.Broadcast(ChatMessage);
+	UE_LOG(LogTemp, Warning, TEXT("Replicating Chat Message Across Clients"))
+	for(AOnlineBeaconClient* ClientBeacon: ClientActors)
+	{
+		if(AZombieBeaconClient* Client = Cast<AZombieBeaconClient>(ClientBeacon))
+		{
+			Client->Client_OnChatMessageReceived(ChatMessage);
 		}
 	}
 }

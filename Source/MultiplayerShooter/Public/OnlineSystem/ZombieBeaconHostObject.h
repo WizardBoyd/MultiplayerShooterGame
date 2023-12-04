@@ -20,6 +20,8 @@ public:
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHostLobbyUpdated, FZombieLobbyInfo, FOnLobbyUpdated);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHostChatReceived, const FText&, FOnHostChatReceived);
+
 /**
  * 
  */
@@ -38,10 +40,18 @@ protected:
 	UPROPERTY(BlueprintAssignable)
 	FHostLobbyUpdated OnLobbyUpdated;
 
+	UPROPERTY(BlueprintAssignable)
+	FHostChatReceived OnChatReceived;
+
+	FTimerHandle TInitialLobbyHandle;
+
 	UFUNCTION(BlueprintCallable)
 	void UpdateLobbyInfo(FZombieLobbyInfo NewLobbyInfo);
 
+
 	void UpdateClientLobbyInfo();
+
+	void InitialLobbyHandling();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -59,4 +69,8 @@ protected:
 private:
 
 	void ReAssignPlayerIDs();
+
+public:
+	UFUNCTION(BlueprintCallable)
+	void SendChatToLobby(const FText& ChatMessage);
 };

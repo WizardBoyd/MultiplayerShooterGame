@@ -12,6 +12,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDisconnected);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLobbyUpdated, FZombieLobbyInfo, FOnLobbyUpdated);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FChatReceived, const FText&, FOnChatReceived);
+
 /**
  * 
  */
@@ -54,10 +56,17 @@ public:
 	UFUNCTION(Client,Reliable)
 	void Client_OnLobbyUpdated(FZombieLobbyInfo LobbyInfo);
 
+	UFUNCTION(Client, Reliable)
+	void Client_OnChatMessageReceived(const FText& ChatMessage);
+	void Client_OnChatMessageReceived_Implementation(const FText& ChatMessage);
+
 	virtual void Client_OnLobbyUpdated_Implementation(FZombieLobbyInfo LobbyInfo);
 
 	void SetPlayerIndex(uint8 Index);
 	uint8 GetPlayerIndex();
+
+	void SetPlayerName(const FString& NewPlayerName);
+	FString GetPlayerName();
 
 protected:
 	UPROPERTY(BlueprintAssignable)
@@ -69,5 +78,9 @@ protected:
 	UPROPERTY(BlueprintAssignable)
 	FLobbyUpdated OnLobbyUpdated;
 
+	UPROPERTY(BlueprintAssignable)
+	FChatReceived OnChatReceived;
+
 	uint8 PlayerIndex;
+	FString PlayerName;
 };
