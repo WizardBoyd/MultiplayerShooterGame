@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "OnlineBeaconHostObject.h"
+#include "http.h"
+#include "Game/CustomGameInstanceBase.h"
 #include "ZombieBeaconHostObject.generated.h"
 
 USTRUCT(BlueprintType)
@@ -35,7 +37,23 @@ public:
 
 protected:
 
+	FHttpModule* Http;
+	int ServerId;
+	void OnProcessRequestComplete(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success);
+	
+protected:
+
+	FServerData ServerData;
 	FZombieLobbyInfo LobbyInfo;
+
+	UFUNCTION(BlueprintCallable)
+	void SetServerData(const FServerData& NewServerData);
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateServerData(const FServerData& NewServerData);
+
+	UFUNCTION(BlueprintCallable)
+	int GetCurrentPlayersCount();
 
 	UPROPERTY(BlueprintAssignable)
 	FHostLobbyUpdated OnLobbyUpdated;
@@ -65,6 +83,9 @@ protected:
 	void DisconnectAllClients();
 
 	virtual void DisconnectClient(AOnlineBeaconClient* ClientActor) override;
+
+	UFUNCTION(BlueprintCallable)
+	void StartServer(const FString& MapUrl);
 
 private:
 

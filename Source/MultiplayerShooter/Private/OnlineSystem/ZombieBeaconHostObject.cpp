@@ -2,7 +2,6 @@
 
 
 #include "OnlineSystem/ZombieBeaconHostObject.h"
-
 #include "OnlineBeaconHost.h"
 #include "OnlineSystem/ZombieBeaconClient.h"
 #include "TimerManager.h"
@@ -11,6 +10,85 @@ AZombieBeaconHostObject::AZombieBeaconHostObject()
 {
 	ClientBeaconActorClass = AZombieBeaconClient::StaticClass();
 	BeaconTypeName = ClientBeaconActorClass->GetName();
+	ServerId = -1;
+	Http = &FHttpModule::Get();
+}
+
+void AZombieBeaconHostObject::OnProcessRequestComplete(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success)
+{
+	if(Success)
+	{
+		ServerId = FCString::Atoi(*Response->GetContentAsString());
+		UE_LOG(LogTemp, Warning, TEXT("Sucess ID: %d"), ServerId);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HttpRequest Failed: %s"), *Response->GetContentAsString());
+	}
+}
+
+void AZombieBeaconHostObject::SetServerData(const FServerData& NewServerData)
+{
+	UE_LOG(LogTemp, Warning, TEXT("SetServerData CALLED"))
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+	ServerData = NewServerData;
+	ServerData.CurrentPlayers = GetCurrentPlayersCount();
+	JsonObject->SetNumberField("ServerId",ServerData.ServerID);
+	JsonObject->SetStringField("IPAddress",ServerData.IPAddress.IsEmpty() ? "127.0.0.1" : ServerData.IPAddress);
+	JsonObject->SetStringField("ServerName",ServerData.ServerName.IsEmpty() ? FString("DefaultServerName") : ServerData.ServerName);
+	JsonObject->SetStringField("MapName",ServerData.MapName.IsEmpty() ? FString("DefaultMapName") : ServerData.MapName);
+	JsonObject->SetNumberField("CurrentPlayers", ServerData.CurrentPlayers);
+	JsonObject->SetNumberField("MaxPlayers", ServerData.MaxPlayers);
+
+	FString JsonString;
+	TSharedRef<TJsonWriter<TCHAR>> JsonWriter = TJsonWriterFactory<>::Create(&JsonString);
+	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter);
+
+	TSharedRef<IHttpRequest> Request = Http->CreateRequest();
+
+	Request->OnProcessRequestComplete().BindUObject(this, &ThisClass::OnProcessRequestComplete);
+	
+	Request->SetURL("https://localhost:44364/api/host");
+	Request->SetVerb("POST");
+	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+	Request->SetContentAsString(JsonString);
+
+	Request->ProcessRequest();
+}
+
+void AZombieBeaconHostObject::UpdateServerData(const FServerData& NewServerData)
+{
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+	ServerData = NewServerData;
+	ServerData.CurrentPlayers = GetCurrentPlayersCount();
+	JsonObject->SetNumberField("ServerId",ServerData.ServerID);
+	JsonObject->SetStringField("IPAddress",ServerData.IPAddress.IsEmpty() ? "127.0.0.1" : ServerData.IPAddress);
+	JsonObject->SetStringField("ServerName",ServerData.ServerName.IsEmpty() ? FString("DefaultServerName") : ServerData.ServerName);
+	JsonObject->SetStringField("MapName",ServerData.MapName.IsEmpty() ? FString("DefaultMapName") : ServerData.MapName);
+	JsonObject->SetNumberField("CurrentPlayers", ServerData.CurrentPlayers);
+	JsonObject->SetNumberField("MaxPlayers", ServerData.MaxPlayers);
+
+	FString JsonString;
+	TSharedRef<TJsonWriter<TCHAR>> JsonWriter = TJsonWriterFactory<>::Create(&JsonString);
+	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter);
+
+	TSharedRef<IHttpRequest> Request = Http->CreateRequest();
+
+	Request->OnProcessRequestComplete().BindUObject(this, &ThisClass::OnProcessRequestComplete);
+	
+	Request->SetURL("https://localhost:44364/api/host/1");
+	Request->SetVerb("PUT");
+	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+	Request->SetContentAsString(JsonString);
+
+	Request->ProcessRequest();
+}
+
+int AZombieBeaconHostObject::GetCurrentPlayersCount()
+{
+	return LobbyInfo.PlayerList.Num();
 }
 
 void AZombieBeaconHostObject::UpdateLobbyInfo(FZombieLobbyInfo NewLobbyInfo)
@@ -33,7 +111,32 @@ void AZombieBeaconHostObject::UpdateClientLobbyInfo()
 
 void AZombieBeaconHostObject::InitialLobbyHandling()
 {
+	UE_LOG(LogTemp, Warning, TEXT("InitialLobbyHandling CALLED"))
 	UpdateLobbyInfo(LobbyInfo);
+
+	// TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+	// JsonObject->SetNumberField("ServerId",0);
+	// JsonObject->SetStringField("IPAddress","127.0.0.1");
+	// JsonObject->SetStringField("ServerName","Test Server Name");
+	// JsonObject->SetStringField("MapName","Test Map Name");
+	// JsonObject->SetNumberField("CurrentPlayers",1);
+	// JsonObject->SetNumberField("MaxPlayers",5);
+	//
+	// FString JsonString;
+	// TSharedRef<TJsonWriter<TCHAR>> JsonWriter = TJsonWriterFactory<>::Create(&JsonString);
+	// FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter);
+	//
+	// TSharedRef<IHttpRequest> Request = Http->CreateRequest();
+	//
+	// Request->OnProcessRequestComplete().BindUObject(this, &ThisClass::OnProcessRequestComplete);
+	//
+	// Request->SetURL("https://localhost:44364/api/host");
+	// Request->SetVerb("POST");
+	// Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+	//
+	// Request->SetContentAsString(JsonString);
+	//
+	// Request->ProcessRequest();
 }
 
 void AZombieBeaconHostObject::BeginPlay()
@@ -49,6 +152,11 @@ void AZombieBeaconHostObject::OnClientConnected(AOnlineBeaconClient* NewClientAc
 
 	if(NewClientActor)
 	{
+		if(GetCurrentPlayersCount() >= ServerData.MaxPlayers)
+		{
+			DisconnectClient(NewClientActor);
+			return;
+		}
 		FString PlayerName = FString("Player ");
 		const uint8 Index = LobbyInfo.PlayerList.Num();
 		PlayerName.Append(FString::FromInt(Index));
@@ -63,6 +171,8 @@ void AZombieBeaconHostObject::OnClientConnected(AOnlineBeaconClient* NewClientAc
 		UE_LOG(LogTemp, Warning, TEXT("Connected Client Valid"))
 		OnLobbyUpdated.Broadcast(LobbyInfo);
 		UpdateClientLobbyInfo();
+
+		UpdateServerData(ServerData);
 	}
 	else
 	{
@@ -83,6 +193,7 @@ void AZombieBeaconHostObject::NotifyClientDisconnected(AOnlineBeaconClient* Leav
 	ReAssignPlayerIDs();
 	OnLobbyUpdated.Broadcast(LobbyInfo);
 	UpdateClientLobbyInfo();
+	UpdateServerData(ServerData);
 }
 
 void AZombieBeaconHostObject::ShutdownServer()
@@ -97,6 +208,18 @@ void AZombieBeaconHostObject::ShutdownServer()
 		Host->DestroyBeacon();
 	}
 	UE_LOG(LogTemp, Warning, TEXT("SERVER SHUT DOWN"))
+
+	if(ServerId != -1)
+	{
+		//REMOVE SERVER ENTRY FROM DATA TABLE
+		TSharedRef<IHttpRequest> Request = Http->CreateRequest();
+		
+		Request->SetURL("https://localhost:44364/api/host/" + FString::FromInt(ServerId));
+		Request->SetVerb("DELETE");
+		Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+		
+		Request->ProcessRequest();
+	}
 }
 
 void AZombieBeaconHostObject::DisconnectAllClients()
@@ -120,6 +243,24 @@ void AZombieBeaconHostObject::DisconnectClient(AOnlineBeaconClient* ClientActor)
 			Client->Client_OnDisconnected();
 		}
 		BeaconHost->DisconnectClient(ClientActor);
+	}
+}
+
+void AZombieBeaconHostObject::StartServer(const FString& MapUrl)
+{
+	for(AOnlineBeaconClient* ClientBeacon: ClientActors)
+	{
+		if(AZombieBeaconClient* Client = Cast<AZombieBeaconClient>(ClientBeacon))
+		{
+			Client->Client_FullConnect();
+		}
+	}
+
+	ShutdownServer();
+
+	if(UWorld* World = GetWorld())
+	{
+		World->ServerTravel(MapUrl + "?listen");
 	}
 }
 

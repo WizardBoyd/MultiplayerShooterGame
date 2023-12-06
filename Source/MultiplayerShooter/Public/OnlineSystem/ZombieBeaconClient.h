@@ -14,6 +14,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FLobbyUpdated, FZombieLobbyInfo, FOn
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FChatReceived, const FText&, FOnChatReceived);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FFullConnect);
+
 /**
  * 
  */
@@ -28,6 +30,9 @@ public:
 protected:
 	UFUNCTION(BlueprintCallable)
 	bool ConnectToServer(const FString& Address);
+
+	UFUNCTION(BlueprintCallable)
+	void FullConnectToServer(const FString& JoinAddress);
 
 	UFUNCTION(BlueprintCallable)
 	void LeaveLobby();
@@ -68,6 +73,11 @@ public:
 	void SetPlayerName(const FString& NewPlayerName);
 	FString GetPlayerName();
 
+	UFUNCTION(Client, Reliable)
+	void Client_FullConnect();
+
+	virtual void Client_FullConnect_Implementation();
+
 protected:
 	UPROPERTY(BlueprintAssignable)
 	FConnectSuccessful OnClientConnected;
@@ -80,6 +90,9 @@ protected:
 
 	UPROPERTY(BlueprintAssignable)
 	FChatReceived OnChatReceived;
+
+	UPROPERTY(BlueprintAssignable)
+	FFullConnect OnFullConnect;
 
 	uint8 PlayerIndex;
 	FString PlayerName;

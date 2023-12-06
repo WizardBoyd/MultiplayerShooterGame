@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "http.h"
 #include "CustomGameInstanceBase.generated.h"
 
 class UTexture2D;
@@ -24,6 +25,28 @@ public:
 	UTexture2D* MapImage;
 };
 
+USTRUCT(BlueprintType)
+struct FServerData
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int ServerID = 0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FString IPAddress;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FString ServerName;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	FString MapName;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int CurrentPlayers = 0;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int MaxPlayers = 0;
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FServersReceived);
+
 /**
  * 
  */
@@ -35,6 +58,21 @@ class MULTIPLAYERSHOOTER_API UCustomGameInstanceBase : public UGameInstance
 public:
 
 	UCustomGameInstanceBase();
+
+protected:
+	FHttpModule* Http;
+	UPROPERTY(BlueprintAssignable)
+	FServersReceived OnServersReceived;
+
+	TArray<FServerData> ServerList;
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FServerData>& GetServerList();
+	
+	void OnServerListRequestComplete(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success);
+
+	UFUNCTION(BlueprintCallable)
+	void GenerateServerList();
 
 protected:
 

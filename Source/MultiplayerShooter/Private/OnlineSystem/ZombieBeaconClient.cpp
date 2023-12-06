@@ -15,6 +15,16 @@ bool AZombieBeaconClient::ConnectToServer(const FString& Address)
 	return InitClient(Destination);
 }
 
+void AZombieBeaconClient::FullConnectToServer(const FString& JoinAddress)
+{
+	if(APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		PC->ClientTravel(JoinAddress, TRAVEL_Absolute);
+	
+	}
+	LeaveLobby();
+}
+
 void AZombieBeaconClient::LeaveLobby()
 {
 	DestroyBeacon();
@@ -90,5 +100,9 @@ FString AZombieBeaconClient::GetPlayerName()
 	return PlayerName;
 }
 
+void AZombieBeaconClient::Client_FullConnect_Implementation()
+{
+	OnFullConnect.Broadcast();
+}
 
 
