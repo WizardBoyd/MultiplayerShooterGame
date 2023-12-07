@@ -1,7 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 
-#include "MultiplayerShooterGameModeBase.h"
+#include "GameModes/MultiplayerShooterGameModeBase.h"
+
 #include "UI/HUD/ZombieSurvivalHUD.h"
 
 AMultiplayerShooterGameModeBase::AMultiplayerShooterGameModeBase()
@@ -11,4 +12,15 @@ AMultiplayerShooterGameModeBase::AMultiplayerShooterGameModeBase()
 	DefaultPawnClass = PlayerPawnClassFiner.Class;
 
 	HUDClass = AZombieSurvivalHUD::StaticClass();
+}
+
+void AMultiplayerShooterGameModeBase::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+	UE_LOG(LogTemp, Warning, TEXT("Post Login GAMEMODE"))
+}
+
+void AMultiplayerShooterGameModeBase::BeginPlay()
+{
+	UE_LOG(LogTemp, Warning, TEXT("BEGIN PLAY GAMEMODE"))
 }

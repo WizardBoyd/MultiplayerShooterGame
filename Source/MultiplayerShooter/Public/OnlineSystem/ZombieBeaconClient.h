@@ -50,6 +50,12 @@ protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 		void Server_SendChatMessage(const FText& ChatMessage);
 	void Server_SendChatMessage_Implementation(const FText& ChatMessage);
+
+	/**
+	 * @brief 
+	 * @param ChatMessage 
+	 * @return 
+	 */
 	bool Server_SendChatMessage_Validate(const FText& ChatMessage);
 
 public:
@@ -76,6 +82,7 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_FullConnect();
 
+	
 	virtual void Client_FullConnect_Implementation();
 
 protected:

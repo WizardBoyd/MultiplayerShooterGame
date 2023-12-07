@@ -16,4 +16,8 @@ class MULTIPLAYERSHOOTER_API AMultiplayerShooterGameModeBase : public AGameModeB
 
 public:
 	AMultiplayerShooterGameModeBase();
+
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+protected:
+	virtual void BeginPlay() override;
 };
