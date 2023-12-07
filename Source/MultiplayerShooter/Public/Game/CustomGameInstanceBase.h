@@ -59,8 +59,11 @@ public:
 
 	UCustomGameInstanceBase();
 
+	const FString& GetWebApiUrl();
+
 protected:
 	FHttpModule* Http;
+	const FString WebApiUrl = FString("https://worldatwarz.gear.host/api/host/");
 	UPROPERTY(BlueprintAssignable)
 	FServersReceived OnServersReceived;
 

@@ -40,6 +40,9 @@ protected:
 	FHttpModule* Http;
 	int ServerId;
 	void OnProcessRequestComplete(FHttpRequestPtr Request, FHttpResponsePtr Response, bool Success);
+
+	UFUNCTION(BlueprintCallable)
+	FString GetLocalIpAddress();
 	
 protected:
 

@@ -10,6 +10,11 @@ UCustomGameInstanceBase::UCustomGameInstanceBase()
 	Http = &FHttpModule::Get();
 }
 
+const FString& UCustomGameInstanceBase::GetWebApiUrl()
+{
+	return WebApiUrl;
+}
+
 TArray<FServerData>& UCustomGameInstanceBase::GetServerList()
 {
 	return ServerList;
@@ -65,7 +70,12 @@ void UCustomGameInstanceBase::GenerateServerList()
 
 	Request->OnProcessRequestComplete().BindUObject(this, &ThisClass::OnServerListRequestComplete);
 	
-	Request->SetURL("https://localhost:44364/api/host");
+	// Request->SetURL("https://localhost:44364/api/host");
+	// Request->SetVerb("GET");
+	// Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+	//
+	// Request->ProcessRequest();
+	Request->SetURL(GetWebApiUrl());
 	Request->SetVerb("GET");
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 

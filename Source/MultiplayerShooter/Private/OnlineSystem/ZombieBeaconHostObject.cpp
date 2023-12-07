@@ -3,7 +3,11 @@
 
 #include "OnlineSystem/ZombieBeaconHostObject.h"
 #include "OnlineBeaconHost.h"
+#include "SocketSubsystem.h"
+#include "Game/CustomGameInstanceBase.h"
 #include "OnlineSystem/ZombieBeaconClient.h"
+#include "SocketSubsystem.h"
+#include "IPAddress.h"
 #include "TimerManager.h"
 
 AZombieBeaconHostObject::AZombieBeaconHostObject()
@@ -27,6 +31,18 @@ void AZombieBeaconHostObject::OnProcessRequestComplete(FHttpRequestPtr Request, 
 	}
 }
 
+FString AZombieBeaconHostObject::GetLocalIpAddress()
+{
+	bool canBind = false;
+	TSharedRef<FInternetAddr> localIp = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->GetLocalHostAddr(*GLog, canBind);
+	if(localIp->IsValid())
+	{
+		GLog->Log(localIp->ToString(false));
+		return localIp->ToString(false);
+	}
+	return FString("");
+}
+
 void AZombieBeaconHostObject::SetServerData(const FServerData& NewServerData)
 {
 	UE_LOG(LogTemp, Warning, TEXT("SetServerData CALLED"))
@@ -47,14 +63,22 @@ void AZombieBeaconHostObject::SetServerData(const FServerData& NewServerData)
 	TSharedRef<IHttpRequest> Request = Http->CreateRequest();
 
 	Request->OnProcessRequestComplete().BindUObject(this, &ThisClass::OnProcessRequestComplete);
+
+	if(UCustomGameInstanceBase* GI = GetGameInstance<UCustomGameInstanceBase>())
+	{
+		
+		Request->SetURL(GI->GetWebApiUrl());
+		Request->SetVerb("POST");
+		Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+		Request->SetContentAsString(JsonString);
+
+		Request->ProcessRequest();
+	}else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("FAILED TO CAST GAME INSTANCE FOR WEB REQUEST"));
+	}
 	
-	Request->SetURL("https://localhost:44364/api/host");
-	Request->SetVerb("POST");
-	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
-
-	Request->SetContentAsString(JsonString);
-
-	Request->ProcessRequest();
 }
 
 void AZombieBeaconHostObject::UpdateServerData(const FServerData& NewServerData)
@@ -77,13 +101,20 @@ void AZombieBeaconHostObject::UpdateServerData(const FServerData& NewServerData)
 
 	Request->OnProcessRequestComplete().BindUObject(this, &ThisClass::OnProcessRequestComplete);
 	
-	Request->SetURL("https://localhost:44364/api/host/1");
-	Request->SetVerb("PUT");
-	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+	if(UCustomGameInstanceBase* GI = GetGameInstance<UCustomGameInstanceBase>())
+	{
+		
+		Request->SetURL(GI->GetWebApiUrl() + FString("1"));
+		Request->SetVerb("PUT");
+		Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
 
-	Request->SetContentAsString(JsonString);
+		Request->SetContentAsString(JsonString);
 
-	Request->ProcessRequest();
+		Request->ProcessRequest();
+	}else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("FAILED TO CAST GAME INSTANCE FOR WEB REQUEST"));
+	}
 }
 
 int AZombieBeaconHostObject::GetCurrentPlayersCount()
@@ -213,12 +244,18 @@ void AZombieBeaconHostObject::ShutdownServer()
 	{
 		//REMOVE SERVER ENTRY FROM DATA TABLE
 		TSharedRef<IHttpRequest> Request = Http->CreateRequest();
+		if(UCustomGameInstanceBase* GI = GetGameInstance<UCustomGameInstanceBase>())
+		{
 		
-		Request->SetURL("https://localhost:44364/api/host/" + FString::FromInt(ServerId));
-		Request->SetVerb("DELETE");
-		Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
-		
-		Request->ProcessRequest();
+			Request->SetURL(GI->GetWebApiUrl() + "?localIp=" + ServerData.IPAddress);
+			Request->SetVerb("DELETE");
+			Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+			Request->ProcessRequest();
+		}else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("FAILED TO CAST GAME INSTANCE FOR WEB REQUEST"));
+		}
 	}
 }
 
