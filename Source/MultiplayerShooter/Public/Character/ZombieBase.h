@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "ZombieBase.generated.h"
-
+class AZombieWaveSurvivalCharacter;
 UCLASS()
 class MULTIPLAYERSHOOTER_API AZombieBase : public ACharacter
 {
@@ -18,5 +18,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+public:
+	void Hit(AZombieWaveSurvivalCharacter* Player);
 
 };

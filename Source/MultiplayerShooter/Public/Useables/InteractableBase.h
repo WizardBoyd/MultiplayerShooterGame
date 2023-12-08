@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "InteractableBase.generated.h"
 
-class ACharacterBase;
+class AZombieWaveSurvivalCharacter;
 UCLASS()
 class MULTIPLAYERSHOOTER_API AInteractableBase : public AActor
 {
@@ -29,5 +29,5 @@ protected:
 public:
 	FString GetUIMessage();
 
-	virtual void Use(ACharacterBase* Player);
+	virtual void Use(AZombieWaveSurvivalCharacter* Player);
 };

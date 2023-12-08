@@ -11,6 +11,7 @@
 #include "TimerManager.h"
 #include "Character/ZombieWaveSurvivalCharacter.h"
 #include "Game/ZombieSurvivalGameState.h"
+#include "Useables/Barricade.h"
 
 
 // Sets default values
@@ -27,14 +28,14 @@ void AZombieWaveSurvivalGameMode::SpawnZombie()
 {
 	if(ZombiesRemaining > 0)
 	{
-		int randomIndex = FMath::RandRange(0, ZombieSpawnPoints.Num() - 1);
-		if(AZombieWaveSurvivalZombieSpawnPoint * SpawnPoint = ZombieSpawnPoints[randomIndex])
+		int randomIndex = FMath::RandRange(0, ActiveZombieSpawnPoints.Num() - 1);
+		if(AZombieWaveSurvivalZombieSpawnPoint * SpawnPoint = ActiveZombieSpawnPoints[randomIndex])
 		{
 			FVector location = SpawnPoint->GetActorLocation();
 			FRotator rotation = SpawnPoint->GetActorRotation();
 			if(AZombieBase* Zombie = GetWorld()->SpawnActor<AZombieBase>(ZombieClass, location, rotation))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("SPAWNED Zombie"))
+				//UE_LOG(LogTemp, Warning, TEXT("SPAWNED Zombie"))
 				--ZombiesRemaining;
 			}
 		}
@@ -109,7 +110,16 @@ void AZombieWaveSurvivalGameMode::BeginPlay()
 	{
 		if(AZombieWaveSurvivalZombieSpawnPoint* SpawnPoint = Cast<AZombieWaveSurvivalZombieSpawnPoint>(Actor))
 		{
-			ZombieSpawnPoints.Add(SpawnPoint);
+			
+			if(ABarricade* LinkedBarricade = SpawnPoint->GetLinkedBarricade())
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Zone Number: %d"), LinkedBarricade->GetAccessZone())
+				SpawnPoint->SetZone(LinkedBarricade->GetAccessZone());
+				ZombieSpawnPoints.Add(SpawnPoint);
+			}else
+			{
+				ActiveZombieSpawnPoints.Add(SpawnPoint);
+			}
 		}
 	}
 	UE_LOG(LogTemp, Warning, TEXT("Spawn point Count Zombies: %d"), ZombieSpawnPoints.Num())
@@ -119,5 +129,27 @@ void AZombieWaveSurvivalGameMode::BeginPlay()
 		World->GetTimerManager().SetTimer(TZombieSpawnHandle, this, &ThisClass::SpawnZombie, 2.0f, true); //This is where I may change spawn rate
 	}
 	
+}
+
+void AZombieWaveSurvivalGameMode::NewZoneActive(uint8 ZoneNumber)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Setting Active Zone %d"), ZoneNumber);
+
+	int Control = 0;
+	
+	for(int16 x = ZombieSpawnPoints.Num() - 1; x >= 0; --x)
+	{
+		AZombieWaveSurvivalZombieSpawnPoint* SpawnPoint = ZombieSpawnPoints[x];
+		
+		UE_LOG(LogTemp, Warning, TEXT("LoopCount %d"), Control);
+		++Control;
+		if(SpawnPoint && ZoneNumber == SpawnPoint->GetZone() && !SpawnPoint->IsActive())
+		{
+			ActiveZombieSpawnPoints.Add(SpawnPoint);
+			SpawnPoint->Activate();
+			ZombieSpawnPoints.RemoveAt(x);
+			//Remove spawn point from the ZombieSpawnPoints Array
+		}
+	}
 }
 

@@ -27,6 +27,7 @@ protected:
 	bool bHasloadedSpawnPoints;
 	TArray<TObjectPtr<AZombieWaveSurvivalPlayerSpawnPoint>> PlayerSpawnPoints;
 
+	TArray<TObjectPtr<AZombieWaveSurvivalZombieSpawnPoint>> ActiveZombieSpawnPoints;
 	TArray<TObjectPtr<AZombieWaveSurvivalZombieSpawnPoint>> ZombieSpawnPoints;
 
 	UPROPERTY(EditAnywhere, Category = "ZombieSettings")
@@ -57,4 +58,7 @@ protected:
 	void SetSpawnPoints();
 
 	virtual void BeginPlay() override;
+
+public:
+	void NewZoneActive(uint8 ZoneNumber);
 };

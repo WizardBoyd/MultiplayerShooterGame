@@ -14,22 +14,42 @@
 AZombieWaveSurvivalCharacter::AZombieWaveSurvivalCharacter()
 {
 	Interactable = nullptr;
+	InteractionRange = 200.0f;
+	Points = 500;
 }
 
 void AZombieWaveSurvivalCharacter::Interact()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Interact Called"))
+	//Perform Server RPC if client
 	if(Interactable)
 	{
-		Interactable->Use(this);
+		if(HasAuthority())
+			Interactable->Use(this);
+		else
+			Server_Interact(Interactable);
 	}
+}
+
+void AZombieWaveSurvivalCharacter::Server_Interact_Implementation(AInteractableBase* InteractingObject)
+{
+	float Distance = GetDistanceTo(InteractingObject);
+	if(Distance < InteractionRange + 30.0f)
+	{
+		InteractingObject->Use(this);
+	}
+}
+
+bool AZombieWaveSurvivalCharacter::Server_Interact_Validate(AInteractableBase* InteractingObject)
+{
+	return true;
 }
 
 void AZombieWaveSurvivalCharacter::SetInteractableObject()
 {
 	FVector Start = GetFirstPeronCameraComponent()->GetComponentLocation();
 	FVector Rot = GetFirstPeronCameraComponent()->GetComponentRotation().Vector();
-	FVector End = Start + Rot * 500.0f;
+	FVector End = Start + Rot * InteractionRange;
 
 	FHitResult HitResult;
 	FCollisionObjectQueryParams CollisionQuery;
@@ -57,6 +77,25 @@ void AZombieWaveSurvivalCharacter::SetInteractableObject()
 	// 	Interactable = Temp;
 	// else
 	// 	Interactable = nullptr;
+}
+
+void AZombieWaveSurvivalCharacter::IncrementPoints(uint16 Value)
+{
+	Points += Value;
+	UE_LOG(LogTemp, Warning, TEXT("Increased Points - Current Points: %d"), Points);
+}
+
+bool AZombieWaveSurvivalCharacter::DecrementPoints(uint16 Value)
+{
+	if((Points - Value) < 0)
+	{
+		return false;
+	}else
+	{
+		Points -= Value;
+		UE_LOG(LogTemp, Warning, TEXT("Decreased Points - Current Points: %d"), Points);
+		return true;
+	}
 }
 
 void AZombieWaveSurvivalCharacter::BeginPlay()

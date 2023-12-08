@@ -2,7 +2,7 @@
 
 
 #include "Useables/InteractableBase.h"
-#include "Character/CharacterBase.h"
+#include "Character/ZombieWaveSurvivalCharacter.h"
 
 
 
@@ -22,7 +22,7 @@ FString AInteractableBase::GetUIMessage()
 	return UIMessage;
 }
 
-void AInteractableBase::Use(ACharacterBase* Player)
+void AInteractableBase::Use(AZombieWaveSurvivalCharacter* Player)
 {
 }
 
