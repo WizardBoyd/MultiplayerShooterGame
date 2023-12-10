@@ -36,12 +36,13 @@ void ABarricade::OnRep_BarricadeUsed()
 	CollisionMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	if(OpenAnimation)
 		MeshComp->PlayAnimation(OpenAnimation, false);
+	UIMessage = FString();
 }
 
 void ABarricade::Use(AZombieWaveSurvivalCharacter* Player)
 {
 	//Play Animation to move barricade
-	if(HasAuthority() && Player && Player->DecrementPoints(Cost))
+	if(HasAuthority() && !bIsUsed && Player && Player->DecrementPoints(Cost))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("In use Function For %s"), *GetName())
 		bIsUsed = true;
