@@ -88,7 +88,8 @@ void AZombieWaveSurvivalCharacter::SetInteractableObject()
 void AZombieWaveSurvivalCharacter::IncrementPoints(uint16 Value)
 {
 	Points += Value;
-	UE_LOG(LogTemp, Warning, TEXT("Increased Points - Current Points: %d"), Points);
+	OnPointsChanged.Broadcast(Points);
+	// UE_LOG(LogTemp, Warning, TEXT("Increased Points - Current Points: %d"), Points);
 }
 
 bool AZombieWaveSurvivalCharacter::DecrementPoints(uint16 Value)
@@ -99,9 +100,15 @@ bool AZombieWaveSurvivalCharacter::DecrementPoints(uint16 Value)
 	}else
 	{
 		Points -= Value;
-		UE_LOG(LogTemp, Warning, TEXT("Decreased Points - Current Points: %d"), Points);
+		OnPointsChanged.Broadcast(Points);
+		//UE_LOG(LogTemp, Warning, TEXT("Decreased Points - Current Points: %d"), Points);
 		return true;
 	}
+}
+
+int32 AZombieWaveSurvivalCharacter::GetPoints()
+{
+	return Points;
 }
 
 bool AZombieWaveSurvivalCharacter::GetIsAiming()
