@@ -6,10 +6,12 @@
 #include "CharacterBase.h"
 #include "ZombieWaveSurvivalCharacter.generated.h"
 
+class AInteractableBase;
+class AWeaponBase;
+class UAnimMontage;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInteractChanged, const FString&, OnInteractChanged);
 
-class AInteractableBase;
-// class UZombieSurvivalWeaponComponent;
 UCLASS()
 class MULTIPLAYERSHOOTER_API AZombieWaveSurvivalCharacter : public ACharacterBase
 {
@@ -17,7 +19,6 @@ class MULTIPLAYERSHOOTER_API AZombieWaveSurvivalCharacter : public ACharacterBas
 
 public:
 	AZombieWaveSurvivalCharacter();
-
 protected:
 
 	UPROPERTY(BlueprintAssignable)
@@ -37,8 +38,16 @@ protected:
 	TObjectPtr<UInputAction> InteractAction;
 
 protected:
-	// UPROPERTY(EditDefaultsOnly, Category="Weapons")
-	// TSubclassOf<UZombieSurvivalWeaponComponent> SpawningWeapon;
+
+	UPROPERTY(EditAnywhere, Category = "Game Settings")
+	TSubclassOf<AWeaponBase> StartingWeaponClass;
+	
+	TObjectPtr<AWeaponBase> CurrentWeapon;
+	int32 WeaponIndex;
+	TArray<TObjectPtr<AWeaponBase>> WeaponArray;
+
+	//TODO replicate, skip owner
+	bool bIsAiming;
 
 protected:
 	void Interact();
@@ -50,10 +59,19 @@ protected:
 	
 	void SetInteractableObject();
 
+
 public:
 	
 	void IncrementPoints(uint16 Value);
 	bool DecrementPoints(uint16 Value);
+
+	UFUNCTION(BlueprintCallable)
+	bool GetIsAiming();
+
+	UFUNCTION(BlueprintCallable)
+	void SetIsAiming(bool isAiming);
+
+	void M_PlayAnimation(UAnimMontage* AnimationMontage);
 
 protected:
 	virtual void BeginPlay() override;

@@ -8,6 +8,7 @@
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
 #include "Useables/InteractableBase.h"
+#include "Weapon/WeaponBase.h"
 
 
 // Sets default values
@@ -16,6 +17,10 @@ AZombieWaveSurvivalCharacter::AZombieWaveSurvivalCharacter()
 	Interactable = nullptr;
 	InteractionRange = 200.0f;
 	Points = 500;
+
+	//Setting Weapon Details
+	WeaponIndex = 0;
+	bIsAiming = false;
 }
 
 void AZombieWaveSurvivalCharacter::Interact()
@@ -79,6 +84,7 @@ void AZombieWaveSurvivalCharacter::SetInteractableObject()
 	// 	Interactable = nullptr;
 }
 
+
 void AZombieWaveSurvivalCharacter::IncrementPoints(uint16 Value)
 {
 	Points += Value;
@@ -98,9 +104,38 @@ bool AZombieWaveSurvivalCharacter::DecrementPoints(uint16 Value)
 	}
 }
 
+bool AZombieWaveSurvivalCharacter::GetIsAiming()
+{
+	return bIsAiming;
+}
+
+void AZombieWaveSurvivalCharacter::SetIsAiming(bool isAiming)
+{
+	bIsAiming = isAiming;
+}
+
+void AZombieWaveSurvivalCharacter::M_PlayAnimation(UAnimMontage* AnimationMontage)
+{
+	UAnimInstance* AnimInstance = Mesh1P->GetAnimInstance();
+	if(AnimInstance && AnimationMontage)
+	{
+		AnimInstance->Montage_Play(AnimationMontage);
+	}
+}
+
 void AZombieWaveSurvivalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//Spawn Weapon Using StartingWeaponClass
+	if((CurrentWeapon = GetWorld()->SpawnActor<AWeaponBase>(StartingWeaponClass)))
+	{
+		//Attach Spawned Weapon To Socket
+		CurrentWeapon->AttachToComponent(Mesh1P, FAttachmentTransformRules::SnapToTargetIncludingScale, FName("s_weaponSocket"));
+		CurrentWeapon->AttachWeapon(this);
+		WeaponArray.Add(CurrentWeapon);
+	}
+	
 	if(UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().SetTimer(TInteractTimerHandle, this, &ThisClass::SetInteractableObject, 0.5f, true);
@@ -111,10 +146,14 @@ void AZombieWaveSurvivalCharacter::BeginPlay()
 void AZombieWaveSurvivalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	//TODO: Setup Spawning Weapon Controls to the current controls
+	
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		//Interaction
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ThisClass::Interact);
 	}
 }
+
 
