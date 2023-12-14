@@ -67,9 +67,11 @@ void ARangedBase::Fire()
 		{
 			for(FHitResult& Result: Results)
 			{
+				FString Hitbone = Result.BoneName.ToString();
+				UE_LOG(LogTemp, Warning, TEXT("Hit Bone: %s"), *Hitbone);
 				if(AZombieBase* Zombie = Cast<AZombieBase>(Result.GetActor()))
 				{
-					Zombie->Hit(OwningCharacter);
+					Zombie->Hit(OwningCharacter, Result);
 				}
 			}
 		}
@@ -82,6 +84,18 @@ void ARangedBase::Fire()
 			if(FireAnimation)
 				WeaponMesh->PlayAnimation(FireAnimation, false);
 			OwningCharacter->M_PlayAnimation(FPSFireArmsMontage);
+		}
+		TArray<FHitResult> Results;
+		PerformLineTrace(Results);
+		if(Results.Num() > 0)
+		{
+			for(FHitResult& Result: Results)
+			{
+				if(AZombieBase* Zombie = Cast<AZombieBase>(Result.GetActor()))
+				{
+					Zombie->Hit(OwningCharacter, Result);
+				}
+			}
 		}
 		Server_Fire(WeaponMesh->GetSocketLocation(FName("muzzleSocket")),WeaponMesh->GetSocketQuaternion(FName("muzzleSocket")).Vector());
 	}
@@ -106,7 +120,7 @@ void ARangedBase::Server_Fire_Implementation(FVector MuzzleLocation, FVector Muz
 			if(AZombieBase* Zombie = Cast<AZombieBase>(Result.GetActor()))
 			{
 				if(AZombieWaveSurvivalCharacter* Player = Cast<AZombieWaveSurvivalCharacter>(GetOwner()))
-					Zombie->Hit(Player);
+					Zombie->Hit(Player, Result);
 			}
 		}
 	}

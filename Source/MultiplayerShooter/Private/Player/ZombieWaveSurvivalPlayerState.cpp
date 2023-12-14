@@ -19,12 +19,11 @@ void AZombieWaveSurvivalPlayerState::GetLifetimeReplicatedProps(TArray<FLifetime
 }
 void AZombieWaveSurvivalPlayerState::IncrementPoints(uint16 Value)
 {
+	Points += Value;
 	if(HasAuthority())
-	{
-		Points += Value;
 		OnRep_PointsChanged();
-		UE_LOG(LogTemp, Warning, TEXT("Points have Increased On %s : %d"),*GetName(),Points);
-	}
+	OnPointsChanged.Broadcast(Points);
+	UE_LOG(LogTemp, Warning, TEXT("Points have Increased On %s : %d"),*GetName(),Points);
 }
 bool AZombieWaveSurvivalPlayerState::DecrementPoints(uint16 Value)
 {

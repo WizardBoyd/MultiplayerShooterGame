@@ -18,8 +18,10 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	int8 CalculatePointsForKill(const FString& BoneName);
+
 
 public:
-	void Hit(AZombieWaveSurvivalCharacter* Player);
+	void Hit(AZombieWaveSurvivalCharacter* Player, const FHitResult& HitResult);
 
 };
