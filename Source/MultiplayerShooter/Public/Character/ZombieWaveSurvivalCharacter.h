@@ -11,7 +11,6 @@ class AWeaponBase;
 class UAnimMontage;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInteractChanged, const FString&, OnInteractChanged);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPointsChanged, int32, OnPointsChanged);
 
 UCLASS()
 class MULTIPLAYERSHOOTER_API AZombieWaveSurvivalCharacter : public ACharacterBase
@@ -27,15 +26,10 @@ protected:
 	
 	FTimerHandle TInteractTimerHandle;
 	TObjectPtr<AInteractableBase> Interactable;
-
-	UPROPERTY(BlueprintAssignable)
-	FPointsChanged OnPointsChanged;
+	
 
 	UPROPERTY(EditDefaultsOnly)
 		float InteractionRange;
-
-	UPROPERTY(EditDefaultsOnly) //Set to replicate
-		int32 Points;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
@@ -45,8 +39,14 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Game Settings")
 	TSubclassOf<AWeaponBase> StartingWeaponClass;
-	
+
+
+	UPROPERTY(ReplicatedUsing = OnRep_AttachWeapon)
 	TObjectPtr<AWeaponBase> CurrentWeapon;
+
+	UFUNCTION()
+	void OnRep_AttachWeapon();
+	
 	int32 WeaponIndex;
 	TArray<TObjectPtr<AWeaponBase>> WeaponArray;
 
@@ -65,11 +65,6 @@ protected:
 
 
 public:
-	
-	void IncrementPoints(uint16 Value);
-	bool DecrementPoints(uint16 Value);
-	UFUNCTION(BlueprintCallable)
-	int32 GetPoints();
 
 	UFUNCTION(BlueprintCallable)
 	bool GetIsAiming();

@@ -35,20 +35,35 @@ void ARangedBase::PerformLineTrace(TArray<FHitResult>& Results)
 			CollisionParams,CollisionResponse);
 	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f, 0, 3.0f);
 }
+void ARangedBase::PerformLineTrace(FVector StartLocation, FVector StartRotation, TArray<FHitResult>& Results)
+{
+	FVector End = StartLocation + StartRotation * InteractionRange;
+	
+	FCollisionResponseParams CollisionResponse;
+	FCollisionQueryParams CollisionParams;
+	TArray<AActor*> IgnoreActors = TArray<AActor*>({this});
+	if(GetOwner())
+		IgnoreActors.Add(GetOwner());
+	CollisionParams.AddIgnoredActors(IgnoreActors);
+	GetWorld()->LineTraceMultiByChannel(OUT Results, StartLocation, End, ECollisionChannel::ECC_GameTraceChannel1,
+			CollisionParams,CollisionResponse);
+	DrawDebugLine(GetWorld(), StartLocation, End, FColor::Red, false, 2.0f, 0, 3.0f);
+}
 
 void ARangedBase::Fire()
 {
-	UE_LOG(LogTemp, Warning, TEXT("FIRING WEAPON"))
-	if(OwningCharacter)
+	if(GetWorld()->IsNetMode(NM_ListenServer) || GetWorld()->IsNetMode(NM_DedicatedServer) || GetWorld()->IsNetMode(NM_Standalone))
 	{
-		if(FireAnimation)
+		UE_LOG(LogTemp,Warning,TEXT("FIRING FROM A HOST"));
+		if(OwningCharacter)
 		{
-			WeaponMesh->PlayAnimation(FireAnimation, false);
+			if(FireAnimation)
+				WeaponMesh->PlayAnimation(FireAnimation, false);
+			OwningCharacter->M_PlayAnimation(FPSFireArmsMontage);
 		}
-		OwningCharacter->M_PlayAnimation(FPSFireArmsMontage);
 		TArray<FHitResult> Results;
 		PerformLineTrace(Results);
-		if(Results.Num() > 0 )
+		if(Results.Num() > 0)
 		{
 			for(FHitResult& Result: Results)
 			{
@@ -58,8 +73,50 @@ void ARangedBase::Fire()
 				}
 			}
 		}
+		
+	}else if(GetWorld()->IsNetMode(NM_Client))
+	{
+		UE_LOG(LogTemp,Warning,TEXT("FIRING FROM A CLIENT"));
+		if(OwningCharacter)
+		{
+			if(FireAnimation)
+				WeaponMesh->PlayAnimation(FireAnimation, false);
+			OwningCharacter->M_PlayAnimation(FPSFireArmsMontage);
+		}
+		Server_Fire(WeaponMesh->GetSocketLocation(FName("muzzleSocket")),WeaponMesh->GetSocketQuaternion(FName("muzzleSocket")).Vector());
 	}
 }
+void ARangedBase::Server_Fire_Implementation(FVector MuzzleLocation, FVector MuzzleRotation)
+{
+	//UE_LOG(LogTemp, Warning, TEXT("SERVER FIRE FUNCTION"));
+	if(OwningCharacter)
+	{
+		if(FireAnimation)
+		{
+			WeaponMesh->PlayAnimation(FireAnimation, false);
+		}
+		OwningCharacter->M_PlayAnimation(FPSFireArmsMontage);
+	}
+	TArray<FHitResult> Results;
+	PerformLineTrace(MuzzleLocation,MuzzleRotation,Results);
+	if(Results.Num() > 0 )
+	{
+		for(FHitResult& Result: Results)
+		{
+			if(AZombieBase* Zombie = Cast<AZombieBase>(Result.GetActor()))
+			{
+				if(AZombieWaveSurvivalCharacter* Player = Cast<AZombieWaveSurvivalCharacter>(GetOwner()))
+					Zombie->Hit(Player);
+			}
+		}
+	}
+}
+bool ARangedBase::Server_Fire_Validate(FVector MuzzleLocation, FVector MuzzleRotation)
+{
+	return true;
+}
+
+
 void ARangedBase::Reload()
 {
 }
@@ -76,17 +133,21 @@ void ARangedBase::Scope()
 void ARangedBase::AttachWeapon(AZombieWaveSurvivalCharacter* Character)
 {
 	Super::AttachWeapon(Character);
-	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(OwningCharacter->InputComponent))
+	if(Character->IsLocallyControlled())
 	{
-		//Fire
-		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &ThisClass::Fire);
+		if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(OwningCharacter->InputComponent))
+		{
+			//Fire
+			EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &ThisClass::Fire);
 
-		//Scope
-		EnhancedInputComponent->BindAction(ScopeAction, ETriggerEvent::Started, this, &ThisClass::Scope);
-		EnhancedInputComponent->BindAction(ScopeAction, ETriggerEvent::Completed, this, &ThisClass::Scope);
+			//Scope
+			EnhancedInputComponent->BindAction(ScopeAction, ETriggerEvent::Started, this, &ThisClass::Scope);
+			EnhancedInputComponent->BindAction(ScopeAction, ETriggerEvent::Completed, this, &ThisClass::Scope);
 		
+		}
 	}
 }
+
 
 void ARangedBase::RemoveWeapon()
 {

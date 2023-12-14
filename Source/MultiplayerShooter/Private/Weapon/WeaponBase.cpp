@@ -11,18 +11,24 @@ AWeaponBase::AWeaponBase()
 {
 	BaseDamage = 100;
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>("WeaponMesh");
-}
+	RootComponent = WeaponMesh;
 
+	SetReplicates(true);
+}
 void AWeaponBase::AttachWeapon(AZombieWaveSurvivalCharacter* Character)
 {
 	if(Character)
 	{
 		OwningCharacter = Character;
-		if (APlayerController* PlayerController = Cast<APlayerController>(OwningCharacter->Controller))
+		if(Character->IsLocallyControlled())
 		{
-			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+			if (APlayerController* PlayerController = Cast<APlayerController>(OwningCharacter->Controller))
 			{
-				Subsystem->AddMappingContext(WeaponMappingContext, 0);
+				UE_LOG(LogTemp, Warning, TEXT("ATTACHING WEAPON TO: %s"), *OwningCharacter->GetName());
+				if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+				{
+					Subsystem->AddMappingContext(WeaponMappingContext, 0);
+				}
 			}
 		}
 	}

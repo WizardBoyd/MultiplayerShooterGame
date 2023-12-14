@@ -11,6 +11,7 @@
 #include "TimerManager.h"
 #include "Character/ZombieWaveSurvivalCharacter.h"
 #include "Game/ZombieSurvivalGameState.h"
+#include "Player/ZombieWaveSurvivalPlayerController.h"
 #include "Useables/Barricade.h"
 
 

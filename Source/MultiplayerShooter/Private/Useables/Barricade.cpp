@@ -2,7 +2,7 @@
 
 
 #include "Useables/Barricade.h"
-
+#include "Player/ZombieWaveSurvivalPlayerState.h"
 #include "Character/ZombieWaveSurvivalCharacter.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -42,15 +42,20 @@ void ABarricade::OnRep_BarricadeUsed()
 void ABarricade::Use(AZombieWaveSurvivalCharacter* Player)
 {
 	//Play Animation to move barricade
-	if(HasAuthority() && !bIsUsed && Player && Player->DecrementPoints(Cost))
+	if(HasAuthority() && !bIsUsed && Player)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("In use Function For %s"), *GetName())
-		bIsUsed = true;
-		OnRep_BarricadeUsed();
-
-		if(AZombieWaveSurvivalGameMode* GM = GetWorld()->GetAuthGameMode<AZombieWaveSurvivalGameMode>())
+		if(AZombieWaveSurvivalPlayerState* PState = Player->GetPlayerState<AZombieWaveSurvivalPlayerState>())
 		{
-			GM->NewZoneActive(AccessZone);
+			if(!PState->DecrementPoints(Cost))
+				return;
+			UE_LOG(LogTemp, Warning, TEXT("In use Function For %s"), *GetName())
+			bIsUsed = true;
+			OnRep_BarricadeUsed();
+
+			if(AZombieWaveSurvivalGameMode* GM = GetWorld()->GetAuthGameMode<AZombieWaveSurvivalGameMode>())
+			{
+				GM->NewZoneActive(AccessZone);
+			}
 		}
 	}
 }

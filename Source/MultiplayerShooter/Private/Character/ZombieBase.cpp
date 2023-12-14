@@ -2,7 +2,7 @@
 
 
 #include "Character/ZombieBase.h"
-
+#include "Player/ZombieWaveSurvivalPlayerState.h"
 #include "Character/ZombieWaveSurvivalCharacter.h"
 
 
@@ -22,7 +22,10 @@ void AZombieBase::Hit(AZombieWaveSurvivalCharacter* Player)
 {
 	if(HasAuthority() && Player)
 	{
-		Player->IncrementPoints(100);
+		if(AZombieWaveSurvivalPlayerState* PState = Player->GetPlayerState<AZombieWaveSurvivalPlayerState>())
+		{
+			PState->IncrementPoints(100);
+		}
 	}
 }
 

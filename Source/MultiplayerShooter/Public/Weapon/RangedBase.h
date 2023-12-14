@@ -49,12 +49,19 @@ protected:
 	int32 CurrentMagazineAmmo;
 
 	void PerformLineTrace(TArray<FHitResult>& Results);
+	void PerformLineTrace(FVector StartLocation, FVector StartRotation, TArray<FHitResult>& Results);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_Fire(FVector MuzzleLocation, FVector MuzzleRotation);
+	virtual void Server_Fire_Implementation(FVector MuzzleLocation, FVector MuzzleRotation);
+	bool Server_Fire_Validate(FVector MuzzleLocation, FVector MuzzleRotation);
 
 	virtual void Fire();
 	virtual void Reload();
 	virtual void Scope();
 
 public:
+	//virtual void AttachWeapon(AZombieWaveSurvivalCharacter* Character) override;
 	virtual void AttachWeapon(AZombieWaveSurvivalCharacter* Character) override;
 	virtual void RemoveWeapon() override;
 

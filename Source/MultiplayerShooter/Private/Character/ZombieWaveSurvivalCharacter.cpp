@@ -7,6 +7,7 @@
 #include "TimerManager.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/World.h"
+#include "Net/UnrealNetwork.h"
 #include "Useables/InteractableBase.h"
 #include "Weapon/WeaponBase.h"
 
@@ -16,8 +17,6 @@ AZombieWaveSurvivalCharacter::AZombieWaveSurvivalCharacter()
 {
 	Interactable = nullptr;
 	InteractionRange = 200.0f;
-	Points = 500;
-
 	//Setting Weapon Details
 	WeaponIndex = 0;
 	bIsAiming = false;
@@ -85,32 +84,6 @@ void AZombieWaveSurvivalCharacter::SetInteractableObject()
 }
 
 
-void AZombieWaveSurvivalCharacter::IncrementPoints(uint16 Value)
-{
-	Points += Value;
-	OnPointsChanged.Broadcast(Points);
-	// UE_LOG(LogTemp, Warning, TEXT("Increased Points - Current Points: %d"), Points);
-}
-
-bool AZombieWaveSurvivalCharacter::DecrementPoints(uint16 Value)
-{
-	if((Points - Value) < 0)
-	{
-		return false;
-	}else
-	{
-		Points -= Value;
-		OnPointsChanged.Broadcast(Points);
-		//UE_LOG(LogTemp, Warning, TEXT("Decreased Points - Current Points: %d"), Points);
-		return true;
-	}
-}
-
-int32 AZombieWaveSurvivalCharacter::GetPoints()
-{
-	return Points;
-}
-
 bool AZombieWaveSurvivalCharacter::GetIsAiming()
 {
 	return bIsAiming;
@@ -133,21 +106,25 @@ void AZombieWaveSurvivalCharacter::M_PlayAnimation(UAnimMontage* AnimationMontag
 void AZombieWaveSurvivalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	//NOTE: does not mean you have authority over the server just means you have authority over this specific instance of the actor
 
-	//Spawn Weapon Using StartingWeaponClass
-	if((CurrentWeapon = GetWorld()->SpawnActor<AWeaponBase>(StartingWeaponClass)))
+	UE_LOG(LogTemp, Warning, TEXT("BEGIN PLAY WITH: %s") ,*GetName());
+	UE_LOG(LogTemp, Warning, TEXT("BEGIN PLAY IN NET MODE: %d") ,GetWorld()->GetNetMode());
+	if(HasAuthority())
 	{
-		//Attach Spawned Weapon To Socket
-		CurrentWeapon->AttachToComponent(Mesh1P, FAttachmentTransformRules::SnapToTargetIncludingScale, FName("s_weaponSocket"));
-		CurrentWeapon->AttachWeapon(this);
-		WeaponArray.Add(CurrentWeapon);
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.Owner = this;
+		UE_LOG(LogTemp, Warning, TEXT("WEAPON OWNER: %s") ,*GetName());
+		if((CurrentWeapon = GetWorld()->SpawnActor<AWeaponBase>(StartingWeaponClass, SpawnParameters)))
+		{
+			WeaponArray.Add(CurrentWeapon);
+			OnRep_AttachWeapon();
+		}
 	}
-	
 	if(UWorld* World = GetWorld())
 	{
 		World->GetTimerManager().SetTimer(TInteractTimerHandle, this, &ThisClass::SetInteractableObject, 0.5f, true);
 	}
-	
 }
 
 void AZombieWaveSurvivalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -161,6 +138,27 @@ void AZombieWaveSurvivalCharacter::SetupPlayerInputComponent(UInputComponent* Pl
 		//Interaction
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ThisClass::Interact);
 	}
+}
+void AZombieWaveSurvivalCharacter::OnRep_AttachWeapon()
+{
+	if(CurrentWeapon)
+	{
+		CurrentWeapon->AttachWeapon(this);
+		if(IsLocallyControlled())
+		{
+			CurrentWeapon->AttachToComponent(Mesh1P, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("s_weaponSocket"));
+		}else
+		{
+			
+			CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("s_weaponSocket"));
+		}
+	}
+}
+
+void AZombieWaveSurvivalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AZombieWaveSurvivalCharacter, CurrentWeapon);
 }
 
 
